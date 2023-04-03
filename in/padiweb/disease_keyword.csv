@@ -1,0 +1,33 @@
+id;keyword;lang;disease
+1;African swine fever;EN;African swine fever
+2;Wart hog disease;EN;African swine fever
+3;Wart-hog disease;EN;African swine fever
+4;Warthog disease;EN;African swine fever
+5;Avian Influenza;EN;Avian influenza
+6;Influenza in Bird;EN;Avian influenza
+7;Influenza in Birds;EN;Avian influenza
+8;Avian Flu;EN;Avian influenza
+9;Fowl Plague;EN;Avian influenza
+10;Bird flu;EN;Avian influenza
+11;Bluetongue;EN;Bluetongue
+12;Blue tongue;EN;Bluetongue
+13;Ovine catarrhal fever;EN;Bluetongue
+14;Sheep catarrhal fever;EN;Bluetongue
+15;Foot-and-mouth disease;EN;Foot-and-mouth disease
+16;Foot and mouth disease;EN;Foot-and-mouth disease
+17;Schmallenberg virus infection;EN;Schmallenberg virus infection
+18;Schmallenberg disease;EN;Schmallenberg virus infection
+19;Schmallenberg infection;EN;Schmallenberg virus infection
+20;Schmallenberg infection;EN;Schmallenberg virus infection
+21;Lumpy skin disease;EN;Lumpy skin disease
+22;Grippe aviaire;FR;Influenza aviaire
+23;Peste aviaire;FR;Influenza aviaire
+24;Dermatose nodulaire contagieuse;FR;Dermatose nodulaire contagieuse
+25;West Nile;EN;West Nile Virus
+26;Nile fever;EN;West Nile Virus
+27;Nilo occidentale;IT;West Nile Virus
+28;Nilo occidental ;ES;West Nile Virus
+29;Nilo ocidental ;PT;West Nile Virus
+30;Западный Нил ;RU;West Nile Virus
+31;WNV;EN;West Nile Virus
+32;West Nile Fever;EN;West Nile Virus
