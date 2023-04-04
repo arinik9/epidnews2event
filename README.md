@@ -53,6 +53,7 @@ For reproducibility purpose, we provide some samples from the data collected by 
 
 * We have already put a sample dataset in the `in` folder. 
   
+* Update the variable `MAIN_FOLDER` in the file `src/main.py` for your main directory absolute path.
 
 
 ## How to run ?
