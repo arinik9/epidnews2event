@@ -55,6 +55,10 @@ For reproducibility purpose, we provide some samples from the data collected by 
   
 * Update the variable `MAIN_FOLDER` in the file `src/main.py` for your main directory absolute path.
 
+* (Optional) GeoNames applies an hourly limit quota for API queries. In order to take advantage the GeoNames' API as much as possible, we are using multiple GeoNames accounts. The description of these accounts are found in the file `src/consts.py` (with the variables `GEONAMES_API_USERNAME<NO>`, where `<NO>` is an integer value). If necessary, you can also increase the number of these accounts. In which case, you need to update the files under `src/geocode`.
+
+
+
 
 ## How to run ?
 
