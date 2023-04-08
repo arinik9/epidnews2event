@@ -19,8 +19,7 @@ import src.consts as consts
 
 
 # =================================================================
-
-MAIN_FOLDER = "<YOUR_FOLDER>" # TODO
+MAIN_FOLDER = "<YOUR_FOLDER>"
 
 DATA_FOLDER = os.path.join(MAIN_FOLDER, "data")
 IN_FOLDER = os.path.join(MAIN_FOLDER, "in")
@@ -52,6 +51,9 @@ EVAL_PROMED_EVENT_FUSION_FOLDER = os.path.join(EVAL_EVENT_FUSION_FOLDER, consts.
 
 
 
+import spacy
+spacy.cli.download("en_core_web_lg")
+spacy.cli.download("en_core_web_trf")
 
 
 if __name__ == '__main__':
