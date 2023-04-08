@@ -29,7 +29,15 @@ For reproducibility purpose, we provide some samples from the data collected by 
   * Folder `padiweb`: Raw event data from PADI-web.
   * Folder `promed`: Raw unnormalized event data from ProMED.
 
+* Folder `in-bahdja`: this folder is supposed to contain input files for evaluating the event extraction task. It is used by the file `src/main_eval_bahdja.py`. The input files can be found on [Dataverse](https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/Y3XROX) (`eval_event_data.zip`) and they are prepared by Bahdja Boudoua.
+
+* Folder `in-geocoding`: this folder is supposed to contain input files for evaluating the geocoding task. It is used by the file `src/main_eval_geocoding.py`. The input files can be found on [Dataverse](https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/Y3XROX) (`eval_event_data.zip`). These files constitute some of the files of [this Dataverse repository](https://dataverse.cirad.fr/dataset.xhtml?persistentId=doi:10.18167/DVN1/KH7YTO): 
+
 * Folder `out`: contains the files produced by our scripts
+
+* Folder `out-bahdja`: contains the files produced by our scripts
+
+* Folder `out-geocoding`: contains the files produced by our scripts
 
 * Folder `src`: 
 
@@ -40,6 +48,8 @@ For reproducibility purpose, we provide some samples from the data collected by 
   * Folder `geocoding`: this folder contains the scripts performing the geocoding task. This task consists in assigning geographic coordinates to spatial entities.
   * Folder `media_sources`: this folder contains the scripts performing the processing of media source information.
   * Folder `preprocessing`: this folder contains the scripts performing the preprocessing step. It essentially corresponding to normalizing event related entities. Regarding ProMED and Empres-i, this step amounts to extract normalized events.
+  * Folder `evaluate`: this folder contains the scripts performing the evaluation of the geocoding and event extraction tasks.
+  * Folder `prepare_input`: this folder contains the scripts creating additional input files from `in-geocoding/articlesweb.csv` into the folder `in-geocoding`.
 
 
 ## Installation
@@ -80,12 +90,22 @@ For reproducibility purpose, we provide some samples from the data collected by 
 
 
 
-## How to run ?
+## How to run the main program ?
 
 * Go to the main folder (e.g. `/home/USER/epidnews2event`).
 
 * Run the file `src/main.py`.
 
+
+
+
+## How to run the evaluation scripts ?
+
+* Go to the main folder (e.g. `/home/USER/epidnews2event`).
+
+* Run the file `src/main_eval_bahdja.py` for the event extraction task.
+
+* Run the file `src/main_eval_geocoding.py` for the geocoding task.
 
 
 ## References
