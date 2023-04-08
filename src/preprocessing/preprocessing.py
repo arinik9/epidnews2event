@@ -3124,9 +3124,8 @@ class PreprocessingBadhjaSignals(PreprocessingEmpresi):
     
     # ======================================================
     
+    """
     input_events_filepath = os.path.join(self.out_csv_folder, "signal_bahdja.csv")
-    event_candidates_filepath = os.path.join(self.out_csv_folder, \
-                                "events_signal" + "." + consts.FILE_FORMAT_CSV)
     cols_event_candidates = ["id_signal", consts.COL_LOC_CITY, consts.COL_LOC_REGION, consts.COL_LOC_COUNTRY, "Region", \
                            "ReportDate", "Serotype", consts.COL_DISEASE, consts.COL_HOST, consts.COL_LAT, consts.COL_LNG]
     self.df_raw_events = pd.read_csv(input_events_filepath, usecols=cols_event_candidates, sep=";", keep_default_na=False)
@@ -3145,7 +3144,7 @@ class PreprocessingBadhjaSignals(PreprocessingEmpresi):
     host_list = self.retrieve_host_list()
     
     disease_list = self.retrieve_disease_list()
-        
+    """    
         
         
         

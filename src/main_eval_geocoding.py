@@ -6,6 +6,11 @@ Created on Nov 14, 2021
 
 from src.preprocessing.preprocessing import PreprocessingPadiweb
 from src.evaluate.evaluate_geocoding_result import evaluate_all_spatial_info_extr_results
+from src.prepare_input.retrieve_sentences import retrieve_sentences_from_all_raw_texts
+from src.prepare_input.retrieve_gpe import retrieve_gpe_from_all_raw_texts
+from src.prepare_input.retrieve_geonames_details import retrieve_geonames_details_for_ground_truth
+from src.prepare_input.retrieve_geonames_hierarchy import retrieve_geonames_hierarchy_for_ground_truth
+
 
 import os
 import src.consts as consts
@@ -27,7 +32,7 @@ import json
 
 
 #MAIN_FOLDER = os.path.abspath("..") # the absolute path of the previous level
-MAIN_FOLDER = "/home/nejat/eclipse/github/epidnews2event"
+MAIN_FOLDER = "<YOUR_FOLDER>"
 
 LIB_FOLDER = os.path.join(MAIN_FOLDER, "lib")
 DATA_FOLDER = os.path.join(MAIN_FOLDER, "data")
@@ -36,7 +41,7 @@ DATA_FOLDER = os.path.join(MAIN_FOLDER, "data")
 
 # input folder
 IN_FOLDER = os.path.join(MAIN_FOLDER, "in-geocoding") # REMARK: it will be reassigned in main.py
-
+IN_RAW_FOLDER = os.path.join(IN_FOLDER, "raw")
 OUT_FOLDER = os.path.join(MAIN_FOLDER, "out-geocoding")
 CSV_FOLDER = os.path.join(OUT_FOLDER, "csv")
 
@@ -48,9 +53,30 @@ if __name__ == '__main__':
   
   DISEASE_NAME = consts.DISEASE_AVIAN_INFLUENZA
   
-  # TODO:
-  #  - prepare_input
-  #  - prepare_ground_truth
+
+
+  # ########################################################################
+  # PREPARE INPUT
+  articles_filepath = os.path.join(IN_FOLDER, "articlesweb.csv")
+  sentences_filepath = os.path.join(IN_FOLDER, "sentences_with_labels.csv")
+  extr_info_filepath = os.path.join(IN_FOLDER, "extracted_information.csv")
+  
+  retrieve_sentences_from_all_raw_texts(articles_filepath, sentences_filepath)
+  retrieve_gpe_from_all_raw_texts(articles_filepath, extr_info_filepath)
+  # ########################################################################
+
+
+  # ########################################################################
+  # PREPARE GROUND-TRUTH
+  articles_filepath = os.path.join(IN_FOLDER, "articlesweb.csv")
+  ground_truth_folder_path = IN_RAW_FOLDER
+  geonames_data_filepath = os.path.join(IN_FOLDER, "ground_truth_geonames_data.csv")
+  geonames_hierarchy_data_filepath = os.path.join(IN_FOLDER, "ground_truth_geonames_hierarchy.csv")
+  
+  retrieve_geonames_details_for_ground_truth(articles_filepath, ground_truth_folder_path, geonames_data_filepath)
+  retrieve_geonames_hierarchy_for_ground_truth(articles_filepath, ground_truth_folder_path, geonames_hierarchy_data_filepath)
+  # ########################################################################
+  
       
         
   # #########################################

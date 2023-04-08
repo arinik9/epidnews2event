@@ -42,7 +42,7 @@ from src.util_event import read_df_events, read_events_from_df
 
 
 #MAIN_FOLDER = os.path.abspath("..") # the absolute path of the previous level
-MAIN_FOLDER = "/home/nejat/eclipse/github/epidnews2event"
+MAIN_FOLDER = "/home/nejat/Downloads/epidnews2event-dev"
 
 LIB_FOLDER = os.path.join(MAIN_FOLDER, "lib")
 DATA_FOLDER = os.path.join(MAIN_FOLDER, "data")
@@ -191,7 +191,7 @@ if __name__ == '__main__':
      print(err)
   
   prep = PreprocessingEmpresi()
-  prep.perform_preprocessing(DISEASE_NAME, IN_EMPRESSI_FOLDER, CSV_EMPRESI_FOLDER, DATA_FOLDER)
+  #prep.perform_preprocessing(DISEASE_NAME, IN_EMPRESSI_FOLDER, CSV_EMPRESI_FOLDER, DATA_FOLDER)
   
   
   
@@ -206,21 +206,21 @@ if __name__ == '__main__':
      print(err)
   
   prep = PreprocessingPadiweb()
-  prep.perform_preprocessing(DISEASE_NAME, IN_PADIWEB_FOLDER, CSV_PADIWEB_FOLDER, DATA_FOLDER)
+  #prep.perform_preprocessing(DISEASE_NAME, IN_PADIWEB_FOLDER, CSV_PADIWEB_FOLDER, DATA_FOLDER)
   
   relevant_sentence_event_retrieval_strategy = EventRetrievalStrategyRelevantSentence()
   event_retrieval = EventRetrievalPadiweb(relevant_sentence_event_retrieval_strategy)
-  event_retrieval.perform_event_retrieval(DISEASE_NAME, IN_PADIWEB_FOLDER, CSV_PADIWEB_FOLDER, DATA_FOLDER)
+  #event_retrieval.perform_event_retrieval(DISEASE_NAME, IN_PADIWEB_FOLDER, CSV_PADIWEB_FOLDER, DATA_FOLDER)
   
   event_duplicate_ident_strategy_manual = EventDuplicateHierIdentificationStrategy()
   event_clustering_strategy = EventClusteringStrategyHierDuplicate()
   event_clustering_padiweb_manual = EventClusteringPadiweb(event_duplicate_ident_strategy_manual, event_clustering_strategy)
-  event_clustering_padiweb_manual.perform_event_clustering(relevant_sentence_event_retrieval_strategy, CSV_PADIWEB_FOLDER, EVAL_PADIWEB_EVENT_CLUSTERING_FOLDER)
+  #event_clustering_padiweb_manual.perform_event_clustering(relevant_sentence_event_retrieval_strategy, CSV_PADIWEB_FOLDER, EVAL_PADIWEB_EVENT_CLUSTERING_FOLDER)
   
   max_occurrence_fusion_strategy = EventFusionStrategyMaxOccurrence()
   event_fusion_padiweb = EventFusionPadiweb(max_occurrence_fusion_strategy, relevant_sentence_event_retrieval_strategy, \
                                             event_clustering_padiweb_manual)
-  event_fusion_padiweb.perform_event_fusion(CSV_PADIWEB_FOLDER, EVAL_PADIWEB_EVENT_CLUSTERING_FOLDER, EVAL_PADIWEB_EVENT_FUSION_FOLDER)
+  #event_fusion_padiweb.perform_event_fusion(CSV_PADIWEB_FOLDER, EVAL_PADIWEB_EVENT_CLUSTERING_FOLDER, EVAL_PADIWEB_EVENT_FUSION_FOLDER)
   
   
 
