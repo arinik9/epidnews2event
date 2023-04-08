@@ -11,7 +11,6 @@ from shapely.geometry import Point, Polygon
 import numpy as np
 import time
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
-from Cython.Compiler.Nodes import PassStatNode
 
 #import pycountry
 import numpy as np

@@ -1,5 +1,6 @@
 # epidnews2event
-Epidemiological event extraction from news
+Epidemiological event extraction from news. This Github repository is dedicated to our work, which has been published in IEEE Access [Arınık'23].
+
 
 * Nejat Arinik [nejat.arinik@inrae.fr](mailto:nejat.arinik@inrae.fr)
 * Roberto Interdonato [roberto.interdonato@cirad.fr](mailto:roberto.interdonato@cirad.fr)
@@ -16,7 +17,8 @@ Moreover, in this work, the spatial and temporal scales are two important parame
 
 ## Data
 
-For reproducibility purpose, we provide some samples from the data collected by PADI-web, ProMED and EMPRES-i in the `in` folder. Hence, it is possible to run the source code with these samples. To get the complete data, please email me. This complete dataset consists of the Avian Influenza events occurred between 2019 and 2021.
+For reproducibility purpose, we provide some samples from the data collected by PADI-web, ProMED and EMPRES-i in the `in` folder. Hence, it is possible to run the source code with these samples. The complete datasets can be found on [Dataverse](https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/Y3XROX) (`raw_event_data.zip`). These complete datasets consist of the Avian Influenza events occurred between 2019 and 2021.
+
 
 
 ## Organization
@@ -42,18 +44,36 @@ For reproducibility purpose, we provide some samples from the data collected by 
 
 ## Installation
 
+* Install [Maven](https://maven.apache.org/).
+
 * Install Python (tested with Python 3.8.12)
 
 * Install Python dependencies using the following command:
 
   ```
   pip install -r requirements.txt
+
   ```
+
+* Run the java dependencies for the package SUTime (check [this website](https://pypi.org/project/sutime/) for more information):
+
+  ```
+  mvn dependency:copy-dependencies -DoutputDirectory=./jars -f $(python3 -c 'import importlib; import pathlib; print(pathlib.Path(importlib.util.find_spec("sutime").origin).parent / "pom.xml")')
+
+  ```
+
 * Download this project from this repository: https://github.com/arinik9/epidnews2event
 
-* We have already put a sample dataset in the `in` folder. 
+* We have already put sample datasets in the `in/events` folder. For the complete data, you need to retrieve the data from [Dataverse](https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/Y3XROX). Download, unzip the file `raw_event_data.zip` and place the folders under `raw_event_data/in` into the `in` folder.
   
-* Update the variable `MAIN_FOLDER` in the file `src/main.py` for your main directory absolute path.
+* Update the variable `MAIN_FOLDER` in the file `src/main.py` for your main directory absolute path (e.g. `/home/USER/epidnews2event`).
+
+* Finally, add the main folder absolute path into `PYTHONPATH`:
+
+  ```
+  export PYTHONPATH="$PWD"
+
+  ```
 
 * (Optional) GeoNames applies an hourly limit quota for API queries. In order to take advantage the GeoNames' API as much as possible, we are using multiple GeoNames accounts. The description of these accounts are found in the file `src/consts.py` (with the variables `GEONAMES_API_USERNAME<NO>`, where `<NO>` is an integer value). If necessary, you can also increase the number of these accounts. In which case, you need to update the files under `src/geocode`.
 
@@ -62,8 +82,13 @@ For reproducibility purpose, we provide some samples from the data collected by 
 
 ## How to run ?
 
-* Go to the folder `src`.
+* Go to the main folder (e.g. `/home/USER/epidnews2event`).
 
-* Run the file `main.py`.
+* Run the file `src/main.py`.
 
+
+
+## References
+
+* **[Arınık'23]** N. Arınık, R. Interdonato, M. Roche and M. Teisseire, [*An Evaluation Framework for Comparing Epidemic Intelligence Systems*](https://www.doi.org/10.1109/ACCESS.2023.3262462). in IEEE Access, vol. 11, pp. 31880-31901, 2023, doi: 10.1109/ACCESS.2023.3262462.
 
