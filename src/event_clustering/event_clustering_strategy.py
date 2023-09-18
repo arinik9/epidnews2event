@@ -153,8 +153,6 @@ class EventClusteringStrategyHierDuplicate(EventClusteringStrategy):
       del possibly_duplicate_events_dict[e_id]
       
       
-          
-      
 
 
     # --------------------------------------------------------------------

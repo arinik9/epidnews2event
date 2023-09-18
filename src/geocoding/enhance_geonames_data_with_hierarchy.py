@@ -5,7 +5,6 @@ Created on Aug 15, 2022
 '''
 
 
-import os
 from random import randrange
 import numpy as np
 import csv

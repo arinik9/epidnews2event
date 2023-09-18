@@ -1,0 +1,23 @@
+
+* **to get articles of interest (articleweb.csv):** 
+    SELECT * FROM (SELECT W.id, W.title, W.url, W.source, W.text, W.lang, W.processed_text, W.published_at, GROUP_CONCAT(DISTINCT C.classificationlabel_id SEPARATOR ' ') AS classificationlabel_id FROM `articleweb` W LEFT JOIN `articleweb_machine_classification_labels` C ON W.id = C.articleweb_id INNER JOIN `rssfeed` R ON W.id_rssfeed = R.id LEFT JOIN `articleweb_annotated` A ON W.id = A.id_articleweb WHERE W.published_at >= '2019-01-01 00:00:00' AND W.published_at < '2022-01-01 00:00:00' AND R.source_category = 'Avian Influenza' GROUP BY W.id ORDER BY W.published_at ASC) T WHERE T.classificationlabel_id = '1 6 24'
+
+
+* **to get extracted information (extracted_information.csv):** 
+    SELECT * FROM (SELECT I.id, I.position, I.token_index, I.length, I.type, I.label, I.value, I.id_articleweb, I.keyword_id, K.keyword_type_id, K.from_automatic_extraction, K.geonames_id, K.geonames_json, GROUP_CONCAT(DISTINCT C.classificationlabel_id SEPARATOR ' ') as a_classificationlabel_id FROM `articleweb` W INNER JOIN `articleweb_machine_classification_labels` C ON W.id = C.articleweb_id INNER JOIN `rssfeed` R ON W.id_rssfeed = R.id INNER JOIN `extracted_information` I ON W.id = I.id_articleweb LEFT JOIN `keyword` K ON K.id = I.keyword_id  WHERE W.published_at >= '2019-01-01 00:00:00' AND W.published_at < '2022-01-01 00:00:00' AND R.source_category = 'Avian Influenza' GROUP BY I.id ORDER BY W.published_at ASC) T WHERE T.a_classificationlabel_id = '1 6 24'
+
+
+* **to get article sentences (sentences_with_labels.csv):**
+    SELECT * FROM (SELECT S.article_id, S.id, S.text, S.lang, S.start, S.end, GROUP_CONCAT(DISTINCT L.classificationlabel_id SEPARATOR ' ') as s_classificationlabel_id, GROUP_CONCAT(DISTINCT C.classificationlabel_id SEPARATOR ' ') as a_classificationlabel_id FROM `articleweb` W INNER JOIN `articleweb_machine_classification_labels` C ON W.id = C.articleweb_id INNER JOIN `rssfeed` R ON W.id_rssfeed = R.id INNER JOIN `articles_sentence` S ON S.article_id = W.id LEFT JOIN `articles_sentence_machine_classification_labels` L ON L.sentence_id = S.id WHERE W.published_at >= '2019-01-01 00:00:00' AND W.published_at < '2022-01-01 00:00:00' AND R.source_category = 'Avian Influenza' AND L.classificationlabel_id IS NOT NULL GROUP BY S.id ORDER BY W.published_at ASC) T WHERE T.a_classificationlabel_id = '1 6 24'
+
+
+* **to get classification labels (classification_classificationlabel.csv):**
+    SELECT * FROM `classification_classificationlabel`
+
+
+* **to get keywords (keyword.csv):**
+SELECT * FROM `keyword`
+
+
+* **to get keyword alignments (keywords_keywordalignment.csv):**
+SELECT * FROM `keywords_keywordalignment`

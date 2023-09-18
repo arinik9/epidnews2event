@@ -74,8 +74,10 @@ class EventDuplicateHierIdentificationStrategy(EventDuplicateIdentificationStrat
     
   
   def is_host_ident_or_hier_bool(self, host1, host2):
-    if host1.is_hierarchically_included(host2) or host1.hierarchically_includes(host2) or host1.is_identical(host2):
-      return True
+    for h1 in host1.get_entry():
+      for h2 in host2.get_entry():
+        if h1.is_hierarchically_included(h2) or h1.hierarchically_includes(h2) or h1.is_identical(h2):
+          return True
     return False
   
 

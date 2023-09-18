@@ -14,18 +14,19 @@ import json
 import dateutil.parser as parser
 
 import src.consts as consts
-import src.event.event as event
-import src.event.location as location
-import src.event.temporality as temporality
-import src.event.symptom as symptom
-import src.event.host as host
-from src.util_event import retrieve_disease_from_raw_sentence, retrieve_host_from_raw_sentence, contains_ban_related_keyword
-from src.util_gis import retrieve_continent_from_country_code
+from src.event.event import Event
+from src.event.location import Location
+from src.event.temporality import Temporality
+from src.event.symptom import Symptom
+from src.event.host import Host
+from src.event.hosts import Hosts
+from src.event.disease import Disease
+from src.util.util_gis import retrieve_continent_from_country_code
 from src.event.timex import convert_timex_str_to_datetime
 
 from sutime import SUTime # temporal entity normalization
 
-
+import re
 
 
 class EventRetrievalStrategy(ABC):
@@ -43,15 +44,87 @@ class EventRetrievalStrategy(ABC):
       pass
   
   
-
   @abstractmethod
   def estimate(self, row:pd.Series, sentence_id_to_article_id:dict, df_initial_info_extr: pd.DataFrame, df_articles: pd.DataFrame, \
-               keyword_ass:pd.DataFrame, df_keywords_align: pd.DataFrame, geonames_ass:dict, sentence_id_to_text:dict, article_id_to_title:dict) -> List:
+               geonames_ass:dict, sentence_id_to_text:dict, article_id_to_title:dict) -> List:
       pass
     
     
+  
+  
 
 
+
+
+  
+class EventRetrievalStrategyStructuredData(EventRetrievalStrategy):
+  
+  def get_description(self) -> str:
+    return(consts.EVENT_RETRIEVAL_STRATEGY_STRUCTURED_DATA)
+
+
+  def estimate(self, article_id:int, pub_date, df_norm_spatial_entities_by_article:pd.DataFrame, \
+               df_norm_disease_entities_by_article:pd.DataFrame, df_norm_host_entities_by_article:pd.DataFrame) -> List:
+    
+      if df_norm_spatial_entities_by_article.shape[0]>0 and \
+        df_norm_disease_entities_by_article.shape[0]>0 and \
+        df_norm_host_entities_by_article.shape[0]>0:
+        print("====== ENTERED !")
+        
+        df_norm_spatial_entities_by_article.reset_index(inplace=True)
+        df_norm_disease_entities_by_article.reset_index(inplace=True)
+        df_norm_host_entities_by_article.reset_index(inplace=True)
+  
+        # ===========================================================================================
+        # PART 1: SPATIAL ENTITIES 
+        # ===========================================================================================      
+        print(df_norm_spatial_entities_by_article)
+        name = df_norm_spatial_entities_by_article.loc[0,consts.KEY_GEONAMES_NAME]
+        geoname_id = df_norm_spatial_entities_by_article.loc[0,consts.COL_GEONAMES_ID]
+        geoname_json_str = df_norm_spatial_entities_by_article.loc[0,consts.COL_GEONAMS_JSON]
+        geoname_json = json.loads(geoname_json_str)
+        lat = geoname_json[consts.COL_LAT]
+        lng = geoname_json[consts.COL_LNG]
+        country_code = df_norm_spatial_entities_by_article.loc[0,consts.COL_COUNTRY_ALPHA3_CODE]
+        continent = df_norm_spatial_entities_by_article.loc[0,consts.COL_LOC_CONTINENT]
+        hierarchy_data = eval(df_norm_spatial_entities_by_article.loc[0,consts.COL_GEONAMES_HIERARCHY_INFO])
+        loc = Location(name, geoname_id, geoname_json, lat, lng, country_code, continent, hierarchy_data)
+        print(loc)
+ 
+        # ===========================================================================================
+        # PART 2: DISEASE ENTITIES 
+        # ===========================================================================================
+        dis_data = eval(df_norm_disease_entities_by_article.loc[0,consts.COL_DISEASE_ENTRY])
+        d_serotype = dis_data["serotype"]
+        d_subtype = dis_data["subtype"]
+        d_type = dis_data["type"]
+        d_pathogenicity = dis_data["pathogenicity"]
+        disease_info = Disease(d_serotype, d_subtype, d_type, d_pathogenicity)
+        print(disease_info)
+        
+        # ===========================================================================================
+        # PART 3: HOST ENTITIES 
+        # ===========================================================================================
+        host_entry_list = eval(df_norm_host_entities_by_article.loc[0,consts.COL_HOST_ENTRY])
+        host_list = [Host(host_entry) for host_entry in host_entry_list]
+        hosts_info = Hosts(host_list)
+        print(hosts_info)
+        
+        # ===========================================================================================
+        # PART 4: SYMPTOM ENTITIES 
+        #        We do nothing here, it is for the future
+        # ===========================================================================================
+        symptom_info = Symptom()
+
+        # ===========================================================================================
+        # PART 5: EVENT CREATION
+        # ===========================================================================================
+        e = Event(-1, article_id, "", "", loc, pub_date, disease_info, hosts_info, symptom_info, "", "")
+        
+        return e
+      
+   
+   
    
    
     
@@ -100,14 +173,39 @@ class EventRetrievalStrategyRelevantSentence(EventRetrievalStrategy):
     e_final = deepcopy(first_event)
     
     for e in other_event_list:
-      # 1) improve disease info 
-      if e.disease.is_hierarchically_included(e_final.disease):
-        e_final.disease = e.disease
-        e_final.sentences = e_final.sentences + "||" + e.sentences
-            
-      # 2) improve host info
-      if e.host.is_hierarchically_included(e_final.host):
-        e_final.host = e.host
+      # we suppose that there is not any inconsistency for hierarchy in all host info of 'e'
+      if not e.is_identical(e_final):
+      
+        # 1) improve disease info 
+        # if e.disease.is_hierarchically_included(e_final.disease):
+        if e.disease.hierarchically_includes(e_final.disease):
+          e_final.disease = e.disease
+          e_final.sentences = e_final.sentences + "||" + e.sentences
+        if e_final.disease.pathogenicity == "unknown-pathogenicity" and e.disease.pathogenicity != "unknown-pathogenicity":
+          e_final.disease.pathogenicity = e.disease.pathogenicity
+              
+        # 2) improve host info
+        # if e.host.is_hierarchically_included(e_final.host):
+        #   e_final.host = e.host
+        #   e_final.sentences = e_final.sentences + "||" + e.sentences
+        host_to_remove = [] # we do not change 'host_info' and 'e.host' during the for iteration
+        host_to_add = []
+        new_host = []
+        for h_new in e.host.get_entry():
+          for h_exis in e_final.host.get_entry():
+            # if host_info.is_hierarchically_included(e.host) or (list(host_info.get_entry().keys())[0] == "human" and list(host_info.get_entry().keys())[0] != list(e.host.get_entry().keys())[0]):
+            if h_new.hierarchically_includes(h_exis):
+              host_to_remove.append(h_exis)
+              host_to_add.append(h_new)
+            else:
+              new_host.append(h_new)
+        for h_exis in host_to_remove:
+          e_final.host.remove_host_info(h_exis)
+        for h_new in host_to_add:
+          e_final.host.add_host_info_if_success(h_new)
+        for h_new in new_host:
+          e_final.host.add_host_info_if_success(h_new)
+        # TODO: verify if there are any existing sentence id ?
         e_final.sentences = e_final.sentences + "||" + e.sentences
           
     return e_final  
@@ -122,34 +220,48 @@ class EventRetrievalStrategyRelevantSentence(EventRetrievalStrategy):
     # first, regroup by geoname_id
     dict_by_geoname_id = {}
     for e in event_list:
-      key = str(e.loc.get_geoname_id())+"_"+e.disease.d_type+"_"+list(e.host.dict_data.keys())[0]
+      key = str(e.loc.get_geoname_id())+"_"+e.disease.d_type # +"_"+  ",".join([h.get_entry()["common_name"] for h in e.host.get_entry()])
       if key not in dict_by_geoname_id:
         dict_by_geoname_id[key] = []
       dict_by_geoname_id[key].append(e)
        
     # second, compress the event occurring in the same place
+    #print("dict_by_geoname_id")
+    #print(dict_by_geoname_id)
     for key in dict_by_geoname_id.keys():
+      #print("-- key", key)
       e_list = dict_by_geoname_id[key]
       e = e_list[0]
       if len(e_list)>1:
         e = self.merge_events_with_same_spatial_entity(e_list)
+      #print(e)
       final_event_list.append(e)
       
+    final_event_list.sort(key=lambda e: e.loc.get_hierarchy_level(), reverse=True)
+    #print("AFTER SORT")
+    #print(final_event_list)
+    
     # third, check spatial inclusion
-    event_ids_to_remove = []
-    for i in range(len(final_event_list)):
-      loc1 = final_event_list[i].loc
-      for j in range(len(final_event_list)):
-        if i != j:
-          loc2 = final_event_list[j].loc
-          if loc1.is_spatially_included(loc2) or loc1.get_geoname_id() == loc2.get_geoname_id():
-            event_ids_to_remove.append(final_event_list[j].e_id)
-    #
     final_event_list2 = []
-    for e in final_event_list:
-      if e.e_id not in event_ids_to_remove:
-        final_event_list2.append(e)
-    return final_event_list2
+    event_ids_to_remove = [] # list of lists
+    for i in range(len(final_event_list)):
+      e_i = final_event_list[i]
+      if e_i.e_id not in event_ids_to_remove:
+        loc1 = e_i.loc
+        for j in range(len(final_event_list)):
+          if i != j:
+            loc2 = final_event_list[j].loc
+            if loc1.is_spatially_included(loc2) or loc1.get_geoname_id() == loc2.get_geoname_id():
+              list_to_merge = [final_event_list[i], final_event_list[j]]
+              e_i = self.merge_events_with_same_spatial_entity(list_to_merge) # deepcopy
+              event_ids_to_remove.append(final_event_list[j].e_id)
+      if e_i.e_id not in event_ids_to_remove:
+        final_event_list2.append(e_i)
+            
+            
+    #print("END handle_event_location_redundancy_and_spatial_inclusion")
+    #print(final_event_list2)
+    return(final_event_list2)
   
   
       
@@ -175,85 +287,153 @@ class EventRetrievalStrategyRelevantSentence(EventRetrievalStrategy):
   # Name: 0, dtype: object      
      
       
-  def estimate(self, disease_name:str, df_extr_spatial_entities_by_article:pd.DataFrame, sentence_id_to_article_id:dict, \
-                sentence_id_to_local_sentence_id: dict, df_articles:pd.DataFrame, \
-                df_initial_info_extr: pd.DataFrame, keyword_ass:pd.DataFrame, df_keywords_align: pd.DataFrame, \
-                geonames_hierarchy_ass:dict, sentence_id_to_text:dict) -> List:
+  def estimate(self, disease_name:str, df_sentences_by_article:pd.DataFrame, df_norm_spatial_entities_by_article:pd.DataFrame, \
+               df_norm_disease_entities_by_article:pd.DataFrame, df_norm_host_entities_by_article:pd.DataFrame, \
+                df_articles:pd.DataFrame, df_initial_info_extr: pd.DataFrame, \
+                geonames_hierarchy_ass:dict) -> List:
     # first, assign input params to local variables
-    article_id = df_extr_spatial_entities_by_article.iloc[0][consts.COL_ARTICLE_ID_RENAMED]
+    article_id = df_norm_spatial_entities_by_article.iloc[0][consts.COL_ARTICLE_ID_RENAMED]
     article_info = df_articles[df_articles[consts.COL_ID] == article_id].iloc[0]
     self.disease_name = disease_name
-    self.df_extr_spatial_entities_by_article = df_extr_spatial_entities_by_article
+    self.df_sentences_by_article = df_sentences_by_article
+    self.df_norm_spatial_entities_by_article = df_norm_spatial_entities_by_article
+    self.df_norm_disease_entities_by_article = df_norm_disease_entities_by_article
+    self.df_norm_host_entities_by_article = df_norm_host_entities_by_article
     self.df_initial_info_extr = df_initial_info_extr
-    self.df_keywords_align = df_keywords_align
-    self.keyword_ass = keyword_ass
-    self.sentence_id_to_article_id = sentence_id_to_article_id
     self.geonames_hierarchy_ass = geonames_hierarchy_ass
-    self.sentence_id_to_text = sentence_id_to_text
-    self.sentence_id_to_local_sentence_id = sentence_id_to_local_sentence_id
     
     title = article_info[consts.COL_TITLE]
     published_time = article_info[consts.COL_PUBLISHED_TIME]
-    t = temporality.Temporality(published_time)
+    t = Temporality(published_time)
     source = article_info[consts.COL_SOURCE]
     url = article_info[consts.COL_URL]
     
-    print("------------------------!!------------------------")
+    print("------------------------!! estimate !!------------------------")
     SLIDING_WINDOW_LENGTH = 4 # 4 next sentences 
     sliding_window_for_history = [] # e.g. 
-    sentence_id_list = np.unique(self.df_extr_spatial_entities_by_article[consts.COL_SENTENCE_ID].to_numpy())
-    #print(self.sentence_id_to_local_sentence_id, sliding_window_for_history)
+    # local_sentence_id_list = np.unique(self.df_sentences_by_article["local_sentence_id"].to_numpy())
+    # #print(self.sentence_id_to_local_sentence_id, sliding_window_for_history)
+    # print("local_sentence_id_list", local_sentence_id_list)
     
     final_event_candidates = []
-    sentence_id_list = [s_id for s_id in sentence_id_list if s_id != -1] # -1 from those coming from title
-    for sentence_id in sentence_id_list:
-      local_sentence_id = self.sentence_id_to_local_sentence_id[sentence_id]
-      sentence_text = self.sentence_id_to_text[sentence_id]
-      #print(sentence_text)
-      df_extr_spatial_entities_by_sentence = \
-                self.df_extr_spatial_entities_by_article[\
-                                     self.df_extr_spatial_entities_by_article["local_sentence_id"] == local_sentence_id]
-      
-      if len(sliding_window_for_history)>0: 
-        # remove the old entries based on time limit
-        completed_event_candidates = [entry[1] for entry in sliding_window_for_history if (local_sentence_id-entry[0])>=SLIDING_WINDOW_LENGTH]
-        sliding_window_for_history = [entry for entry in sliding_window_for_history if (local_sentence_id-entry[0])<SLIDING_WINDOW_LENGTH]
-        final_event_candidates.extend(completed_event_candidates)
-                
-      if not contains_ban_related_keyword(sentence_text):
-        disease_info = retrieve_disease_from_raw_sentence(sentence_text, self.disease_name)
-        #print(disease_info)
-        host_info = retrieve_host_from_raw_sentence(sentence_text) # host info can be empty
-        #print(host_info)
-        symptom_info = symptom.Symptom()
-        contains_forbidden_hosts = np.any([True if h not in consts.DISEASE_HOST_RELATION[self.disease_name] else False \
-                                  for h in host_info.get_entry().keys()])
-        has_disease_keywords = (disease_info is not None and self.disease_name in disease_info.get_entry()[1]) # e.g., self.disease_name="AI" and disease_info.get_entry()[1]="HPAI"
-        has_host = (not host_info.is_host_info_empty())
-        has_new_event_info = (has_disease_keywords and has_host and not contains_forbidden_hosts)  
-        elaborate_existing_events = ((disease_info is None or has_disease_keywords) \
-                                      and not contains_forbidden_hosts and len(sliding_window_for_history)>0)
-        
-        if elaborate_existing_events:
-          #print("---- update")
-          sliding_window_for_history = self.update_existing_event_candidates_from_sentence(sentence_id, local_sentence_id,
-                                                               sliding_window_for_history, \
-                                                              df_extr_spatial_entities_by_sentence, \
-                                                              disease_info, host_info, symptom_info)
+    #local_sentence_id_list = [s_id for s_id in local_sentence_id_list if s_id != -1] # -1 from those coming from title
+    for index, row in df_sentences_by_article.iterrows():
+      local_sentence_id = row["local_sentence_id"]
+      sentence_id = row["id"]
+      if local_sentence_id != -1:
+        sentence_text = row["text"]
+        print("----- local sentence id", local_sentence_id, sentence_text)
+        df_norm_spatial_entities_by_sentence = \
+                  self.df_norm_spatial_entities_by_article[\
+                                       self.df_norm_spatial_entities_by_article["local_sentence_id"] == local_sentence_id]
+        df_norm_disease_entities_by_sentence = \
+                  self.df_norm_disease_entities_by_article[\
+                                       self.df_norm_disease_entities_by_article["local_sentence_id"] == local_sentence_id]
+        df_norm_host_entities_by_sentence = \
+                  self.df_norm_host_entities_by_article[\
+                                       self.df_norm_host_entities_by_article["local_sentence_id"] == local_sentence_id]
+                  
+        # if a new spatial entity is found, the enter
+        # later, we chek other entities
+        if df_norm_spatial_entities_by_sentence.shape[0]>0:
+          print("====== ENTERED !")
           
-        if has_new_event_info:
-          #print("---- new")
-          event_candidates_by_sentences = self.retrieve_new_event_candidates_from_sentence(article_id, title, published_time, \
-                                                           sentence_id, local_sentence_id, t, disease_name, source, url,
-                                                           sentence_text, df_extr_spatial_entities_by_sentence, \
-                                                           disease_info, host_info, symptom_info)
-          for e in event_candidates_by_sentences:
-            #print(e)
-            sliding_window_for_history.append((local_sentence_id, e))
+          #print(df_extr_spatial_entities_by_sentence["value"])
+          if len(sliding_window_for_history)>0: 
+            # remove the old entries based on time limit
+            completed_event_candidates = [entry[1] for entry in sliding_window_for_history if (local_sentence_id-entry[0])>=SLIDING_WINDOW_LENGTH]
+            sliding_window_for_history = [entry for entry in sliding_window_for_history if (local_sentence_id-entry[0])<SLIDING_WINDOW_LENGTH]
+            final_event_candidates.extend(completed_event_candidates)
+                    
+          if not self.contains_ban_related_keyword(sentence_text):
             
+            #print("-- no ban related keyword")
+            print("BEFORE sliding_window_for_history")
+            print(sliding_window_for_history)
             
+            print(df_norm_spatial_entities_by_sentence[["value", "id_articleweb", "local_sentence_id"]])
+
+            has_disease_keywords = True if df_norm_disease_entities_by_sentence.shape[0]>0 else False
+            has_host = True if df_norm_host_entities_by_sentence.shape[0]>0 else False
+          
+            disease_info = None
+            if has_disease_keywords:
+              disease_info_list = []
+              for index, row in df_norm_disease_entities_by_sentence.iterrows():
+                #"disease_text"
+                dis_data = eval(row["disease"])
+                d_serotype = dis_data["serotype"]
+                d_subtype = dis_data["subtype"]
+                d_type = dis_data["type"]
+                d_pathogenicity = dis_data["pathogenicity"]
+                disease_info = Disease(d_serotype, d_subtype, d_type, d_pathogenicity)
+                disease_info_list.append(disease_info)
+                # we keep only the first disease info, otherwise it would be complicated
+              disease_info = disease_info_list[0]
+              print(disease_info)
+            
+            hosts_info = None
+            if has_host:
+              host_info_list = []
+              for index, row in df_norm_host_entities_by_sentence.iterrows():
+                #"disease_text"
+                host_hier = eval(row["host_hierarchy"])
+                host_id = row["host_id"]
+                host_type = row["host_type"]
+                host_common_name = row["host_text"]
+                host_data = {"id": host_id, "type": host_type, "common_name": host_common_name, "level":len(host_hier), "hierarchy": host_hier}
+                host_info = Host(host_data)
+                host_info_list.append(host_info)
+              hosts_info = Hosts(host_info_list)            
+              print(hosts_info)
+            
+            symptom_info = Symptom()
+            #print(host_info.get_entry().keys())
+            #contains_forbidden_hosts = np.any([True if h not in consts.DISEASE_HOST_RELATION[self.disease_name] else False \
+            #                          for h in host_info.get_entry().keys()])
+            contains_forbidden_hosts = False
+            #print("contains_forbidden_hosts", contains_forbidden_hosts)
+            #print("has_disease_keywords", has_disease_keywords)
+            has_new_event_info = (has_disease_keywords and has_host and not contains_forbidden_hosts)
+            #print("has_new_event_info", has_new_event_info)  
+            elaborate_existing_events = ((disease_info is None or has_disease_keywords) \
+                                          and not contains_forbidden_hosts and len(sliding_window_for_history)>0)
+            print("elaborate_existing_events", elaborate_existing_events)
+            if elaborate_existing_events:
+              print("---- update with elaborate_existing_events")
+              sliding_window_for_history = self.update_existing_event_candidates_from_sentence(sentence_id, local_sentence_id,
+                                                                   sliding_window_for_history, \
+                                                                  df_norm_spatial_entities_by_sentence, \
+                                                                  disease_info, hosts_info, symptom_info)
+              print("AFTER sliding_window_for_history")
+              print(sliding_window_for_history)
+              
+            if has_new_event_info:
+              print("---- new")
+              print(sentence_text)
+              print(df_norm_spatial_entities_by_sentence["value"])
+              event_candidates_by_sentences, has_old_date = self.retrieve_new_event_candidates_from_sentence(article_id, title, published_time, \
+                                                               sentence_id, local_sentence_id, t, disease_name, source, url,
+                                                               sentence_text, df_norm_spatial_entities_by_sentence, \
+                                                               disease_info, hosts_info, symptom_info)
+              if has_old_date:
+                sliding_window_for_history = [] # reset
+              else:
+                for e in event_candidates_by_sentences:
+                  print(e)
+                  sliding_window_for_history.append((local_sentence_id, e))
+            
+    print("END sliding_window_for_history")
+    print(sliding_window_for_history)
+    if len(sliding_window_for_history)>0:
+      completed_event_candidates = [entry[1] for entry in sliding_window_for_history]
+      final_event_candidates.extend(completed_event_candidates)
     # finally, check redundancy, if so, compress them        
-    final_event_candidates2 = self.handle_event_location_redundancy_and_spatial_inclusion(final_event_candidates)     
+    #print("before handle_event_location_redundancy_and_spatial_inclusion")
+    #print(final_event_candidates)
+    final_event_candidates2 = self.handle_event_location_redundancy_and_spatial_inclusion(final_event_candidates)
+    #print("FINAL")
+    #print(final_event_candidates2)
     return final_event_candidates2
 
 
@@ -280,11 +460,12 @@ class EventRetrievalStrategyRelevantSentence(EventRetrievalStrategy):
     timex_str_list = [ent['timex-value'] for ent in res_list_date]
     # {'timex-value': '2022-09-14', 'start': 18, 'end': 26, 'text': 'tomorrow', 'type': 'DATE', 'value': '2022-09-14'}
     found_dates = convert_timex_str_to_datetime(timex_str_list)
-    #print(found_dates)
+    #print("found_dates", found_dates)
     for found_date in found_dates:
       # diff_days = (pub_date-found_date).days
       #print(abs(pub_date.day-found_date.day))
-      if abs(pub_date.day-found_date.day) > 360: # 1 year of difference >> to be sure that it is an old date
+      #if abs(pub_date.day-found_date.day) > 360: # 1 year of difference >> to be sure that it is an old date
+      if abs((pub_date-found_date).days) > 30: # 1 year of difference >> to be sure that it is an old date
         has_old_date = True
         #print("has_old_date")
         break
@@ -308,29 +489,29 @@ class EventRetrievalStrategyRelevantSentence(EventRetrievalStrategy):
         continent = retrieve_continent_from_country_code(country_code)
         hierarchy_data = eval(self.geonames_hierarchy_ass[geoname_id]) # it converts into a list
         
-        loc = location.Location(name, geoname_id, geoname_json, lat, lng, country_code, continent, hierarchy_data)
+        loc = Location(name, geoname_id, geoname_json, lat, lng, country_code, continent, hierarchy_data)
         location_list.append(loc)
         
       #print(location_list)
       final_location_list = self.rebuild_location_list_with_spatial_inclusion(location_list)
-      #print(final_location_list)
+      print(final_location_list)
       # create an event object for each location
   
       sentences = str(sentence_id) + "("+str(local_sentence_id)+")"
       event_candidates = []
       for loc in final_location_list:
         if host_info is None:
-          host_info = host.Host()
-        e = event.Event(-1, article_id, url, source, loc, t, disease_info, host_info, symptom_info, title, sentences)
+          host_info = Host()
+        e = Event(-1, article_id, url, source, loc, t, disease_info, host_info, symptom_info, title, sentences)
         event_candidates.append(e)
         
-    return event_candidates
+    return event_candidates, has_old_date
   
   
 
   def update_existing_event_candidates_from_sentence(self, sentence_id, local_sentence_id, sliding_window_for_history, \
                                                               df_extr_spatial_entities_by_sentence, \
-                                                              disease_info, host_info, symptom_info):
+                                                              disease_info, hosts_info, symptom_info):
     # TODO: check if spatialy inclusion does not exist
     
     # 1) improve locations 
@@ -350,13 +531,13 @@ class EventRetrievalStrategyRelevantSentence(EventRetrievalStrategy):
       continent = retrieve_continent_from_country_code(country_code)
       hierarchy_data = eval(self.geonames_hierarchy_ass[geoname_id])
       
-      loc = location.Location(name, geoname_id, geoname_json, lat, lng, country_code, continent, hierarchy_data)
+      loc = Location(name, geoname_id, geoname_json, lat, lng, country_code, continent, hierarchy_data)
       # check if loc is an improvement w.r.t existing ones
       
       entries_to_add = []
       for (id, e) in sliding_window_for_history:
         if loc.is_spatially_included(e.loc):
-          e2 = event.Event(-1, e.article_id, e.url, e.source, loc, e.date, e.disease, e.host, e.symptom, e.title, e.sentences)
+          e2 = Event(-1, e.article_id, e.url, e.source, loc, e.date, e.disease, e.host, e.symptom, e.title, e.sentences)
           if str(sentence_id) not in e.sentences:
             e2.sentences = e2.sentences + ", " + str(sentence_id) + "("+str(local_sentence_id)+")"
           entries_to_add.append((id, e2))
@@ -368,19 +549,40 @@ class EventRetrievalStrategyRelevantSentence(EventRetrievalStrategy):
     # 2) improve disease info in terms of hierarchy
     if disease_info is not None:
       for (id, e) in sliding_window_for_history:
-        if disease_info.is_hierarchically_included(e.disease):
+        #if disease_info.is_hierarchically_included(e.disease):
+        if disease_info.hierarchically_includes(e.disease): # i.e. if disease_info is more specific than e.disease
           e.disease = disease_info
           if str(sentence_id) not in e.sentences:
             e.sentences = e.sentences + ", " + str(sentence_id) + "("+str(local_sentence_id)+")"
             
     # 3) improve host info in terms of hierarchy
-    if not host_info.is_host_info_empty():
+    if hosts_info is not None: # not host_info.is_host_info_empty():
       for (id, e) in sliding_window_for_history:
-        if host_info.is_hierarchically_included(e.host) or (list(host_info.get_entry().keys())[0] == "human" and list(host_info.get_entry().keys())[0] != list(e.host.get_entry().keys())[0]):
-          e.host = host_info
-          if str(sentence_id) not in e.sentences:
-            e.sentences = e.sentences + ", " + str(sentence_id) + "("+str(local_sentence_id)+")"
+        # for each event, there can be multiple host candidates
+        host_to_remove = [] # we do not change 'host_info' and 'e.host' during the for iteration
+        host_to_add = []
+        for h_new in hosts_info.get_entry():
+          for h_exis in e.host.get_entry():
+            # if host_info.is_hierarchically_included(e.host) or (list(host_info.get_entry().keys())[0] == "human" and list(host_info.get_entry().keys())[0] != list(e.host.get_entry().keys())[0]):
+            if h_new.hierarchically_includes(h_exis):
+              host_to_remove.append(h_exis)
+              host_to_add.append(h_new)
+        for h_exis in host_to_remove:
+          e.host.remove_host_info(h_exis)
+        for h_new in host_to_add:
+          e.host.add_host_info_if_success(h_new)
+        if str(sentence_id) not in e.sentences:
+          e.sentences = e.sentences + ", " + str(sentence_id) + "("+str(local_sentence_id)+")"
           
     return sliding_window_for_history
   
   
+  def contains_ban_related_keyword(self, text):
+    ban = False
+    for kw in consts.BAN_KEYWORDS_LIST:
+      parts = kw.split(" ")
+      kw_pattern = ' '.join([" "+p+".{0,2}" for p in parts])
+      if len(re.findall(kw_pattern, text))>0:
+        ban = True
+        break
+    return ban  

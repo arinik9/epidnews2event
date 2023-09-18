@@ -66,13 +66,19 @@ class Event:
     event_entry = [str(self.e_id), str(self.article_id), self.url, self.source]
     print(self.loc.get_entry())
     print(self.date.__str__())
-    print(self.disease.get_entry())
-    event_entry = event_entry + self.loc.get_entry() + [self.date.__str__()] + [str(self.disease.get_entry())] \
-                 + [json.dumps(self.host.get_entry())] + self.symptom.get_entry()
+    print(self.disease.get_hierarchy_as_list())
+    host_entry = self.host.get_entry()
+    event_entry = event_entry + self.loc.get_entry() + [self.date.__str__()] + [str(self.disease.__str__())] \
+                 +  [str(host_entry)] + self.symptom.get_entry()
     return(event_entry)
   
-
-
+  
+  
+  def is_identical(self, e):
+    if self.loc.is_identical(e.loc) and self.date == e.date and self.disease.is_identical(e.disease) and self.host.is_identical(e.host):
+      return(True)
+    return(False)
+  
 
   def __repr__(self):
     return "<Event id: %s, artice id: %s, source: %s, loc: %s, date: %s, disease: %s, host: %s, symptom: %s>" \

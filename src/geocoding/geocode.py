@@ -1,19 +1,8 @@
 
 
-import os
-from pyphoton import Photon
-from pyphoton.errors import PhotonException
 from geopy.geocoders import Nominatim, GeoNames, ArcGIS
-import pandas as pd
-import geopandas as gpd
-import pycountry_convert as pc
-from shapely.geometry import Point, Polygon
-import numpy as np
 import time
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
-
-#import pycountry
-import numpy as np
 
 import src.consts as consts
 import random
@@ -29,7 +18,7 @@ def geocode_batch_with_nominatim(spatial_entity_list, country_bias_list):
   result_list = []
   for i in range(len(spatial_entity_list)):
     #time.sleep(1)
-    time.sleep(0.25)
+    time.sleep(0.10)
     res = {"name": "-1", "country_code": "-1", "raw_data": "-1"}
     try:
       name = spatial_entity_list[i]
@@ -98,7 +87,7 @@ def geocode_batch_with_arcgis(spatial_entity_list, country_bias_list):
       print("---- account index ", arcgis_client_index)
       client_arcgis = clients_arcgis[arcgis_client_index]
   
-      arcgis_locations = client_arcgis.geocode(name, exactly_one=False, out_fields="*")
+      arcgis_locations = client_arcgis.geocode(name, exactly_one=False, out_fields="*", timeout=10)
       if arcgis_locations is None:
         arcgis_locations = []
       best_loc = None
@@ -141,9 +130,11 @@ def geocode_batch_with_arcgis(spatial_entity_list, country_bias_list):
 def geocode_batch_with_geonames(spatial_entity_list, country_bias_list):
 
   geonames_api_username_list = [consts.GEONAMES_API_USERNAME, consts.GEONAMES_API_USERNAME2, \
-                                consts.GEONAMES_API_USERNAME3, consts.GEONAMES_API_USERNAME4, \
+                                consts.GEONAMES_API_USERNAME4, consts.GEONAMES_API_USERNAME3, \
                                 consts.GEONAMES_API_USERNAME5, consts.GEONAMES_API_USERNAME6, \
-                                consts.GEONAMES_API_USERNAME7, consts.GEONAMES_API_USERNAME8]
+                                consts.GEONAMES_API_USERNAME7,\
+                                consts.GEONAMES_API_USERNAME8
+                                ]
   random.shuffle(geonames_api_username_list)
     
   result_list = []
@@ -162,7 +153,7 @@ def geocode_batch_with_geonames(spatial_entity_list, country_bias_list):
       geonames_api_username = geonames_api_username_list[geonames_username_index]
       print("---- account ", geonames_api_username)
       client_geonames = GeoNames(username=geonames_api_username)
-      geonames_locations = client_geonames.geocode(name, exactly_one=False)
+      geonames_locations = client_geonames.geocode(name, exactly_one=False, timeout=10)
       if geonames_locations is None:
         geonames_locations = []
       best_loc = None
@@ -208,10 +199,11 @@ def geocode_with_geonames(spatial_entity_value, country_bias_list, db_locs=None,
   process_country_bias = (len(country_bias_list) > 0)
   country_bias_list_alpha2 = [countries.get(country_code_alpha3).alpha2 for country_code_alpha3 in country_bias_list]
   geonames_api_username_list =  [
-                                #consts.GEONAMES_API_USERNAME, consts.GEONAMES_API_USERNAME2, \
-                                #consts.GEONAMES_API_USERNAME3, consts.GEONAMES_API_USERNAME4, \
-                                #consts.GEONAMES_API_USERNAME5, consts.GEONAMES_API_USERNAME6, \
-                                consts.GEONAMES_API_USERNAME7, consts.GEONAMES_API_USERNAME8                                # consts.GEONAMES_API_USERNAME5, 
+                                consts.GEONAMES_API_USERNAME, consts.GEONAMES_API_USERNAME2, \
+                                consts.GEONAMES_API_USERNAME3, consts.GEONAMES_API_USERNAME4, \
+                                consts.GEONAMES_API_USERNAME5, consts.GEONAMES_API_USERNAME6, \
+                                consts.GEONAMES_API_USERNAME7, 
+                                consts.GEONAMES_API_USERNAME8                             # consts.GEONAMES_API_USERNAME5, 
                                 # consts.GEONAMES_API_USERNAME7, , 
                                 # consts.GEONAMES_API_USERNAME3, consts.GEONAMES_API_USERNAME2, consts.GEONAMES_API_USERNAME4, consts.GEONAMES_API_USERNAME6
                                 ]
@@ -227,7 +219,7 @@ def geocode_with_geonames(spatial_entity_value, country_bias_list, db_locs=None,
   geonames_locations = db_locs
   if db_locs is None:
     print("---- account ", geonames_api_username, "COST COST!!!!", text)
-    geonames_locations = client_geonames.geocode(text, exactly_one=False, country_bias=None)
+    geonames_locations = client_geonames.geocode(text, exactly_one=False, country_bias=None, timeout=10)
     if geonames_locations is None:
       geonames_locations = []
     geonames_locations = [loc.raw for loc in geonames_locations]
@@ -292,7 +284,9 @@ def geocode_raw_with_geonames(spatial_entity_value):
   geonames_api_username_list = [
                                 consts.GEONAMES_API_USERNAME5, consts.GEONAMES_API_USERNAME, \
                                 consts.GEONAMES_API_USERNAME3, \
-                                consts.GEONAMES_API_USERNAME4, consts.GEONAMES_API_USERNAME2, consts.GEONAMES_API_USERNAME8
+                                consts.GEONAMES_API_USERNAME4, \
+                                consts.GEONAMES_API_USERNAME8, \
+                                consts.GEONAMES_API_USERNAME2 
                                 ] #consts.GEONAMES_API_USERNAME5, consts.GEONAMES_API_USERNAME, consts.GEONAMES_API_USERNAME8
                               # consts.GEONAMES_API_USERNAME7, consts.GEONAMES_API_USERNAME3, \
                                # consts.GEONAMES_API_USERNAME4, consts.GEONAMES_API_USERNAME6, consts.GEONAMES_API_USERNAME2,
@@ -302,15 +296,18 @@ def geocode_raw_with_geonames(spatial_entity_value):
   geonames_api_username = geonames_api_username_list[geonames_username_index]
   print("---- account ", geonames_api_username)
   client_geonames = GeoNames(username=geonames_api_username)
-  #
-  geonames_locations = client_geonames.geocode(spatial_entity_value, exactly_one=False, country_bias=None)
-  if geonames_locations is None:
-      geonames_locations = []
-  geonames_locations = [g.raw for g in geonames_locations]
+  geonames_locations = []
+  try:
+    geonames_locations = client_geonames.geocode(spatial_entity_value, exactly_one=False, country_bias=None, timeout=10)
+    if geonames_locations is None:
+        geonames_locations = []
+    geonames_locations = [g.raw for g in geonames_locations]
+  except GeocoderTimedOut as e:
+    print("Read timed out or max retries exceeded with this Geonames account:", geonames_api_username)
+    pass # default, it is an empty list
   return geonames_locations
   # except:
   #   print("error in geocode_batch_with_geonames() with name=", spatial_entity_value)
   #   pass
   #  
-  return None
   

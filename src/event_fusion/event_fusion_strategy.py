@@ -10,10 +10,12 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from typing import List
 import src.event.event as event
+from src.event.hosts import Hosts
 
 from src.event.temporality import Temporality
 
 import numpy as np
+
 
 
 
@@ -79,7 +81,11 @@ class EventFusionStrategyMaxOccurrence(EventFusionStrategy):
     final_disease = self.merge_disease_entries(disease_entries)
     #
     # host
-    host_entries = [e.host for e in event_candidate_list]
+    host_entries = []
+    for e in event_candidate_list:
+      for h in e.host.get_entry():
+        print(h)
+        host_entries.append(h)
     final_host = self.merge_host_entries(host_entries)
     #
     # symptom
@@ -115,17 +121,35 @@ class EventFusionStrategyMaxOccurrence(EventFusionStrategy):
   def merge_disease_entries(self, disease_entries):
     final_disease = disease_entries[0]
     for disease in disease_entries:
-      if disease.is_hierarchically_included(final_disease):
+      #if disease.is_hierarchically_included(final_disease):
+      if disease.hierarchically_includes(final_disease):
         final_disease = disease
     return(final_disease)
 
  
   
   def merge_host_entries(self, host_entries):
-    final_host = host_entries[0]
-    for host in host_entries:
-      if host.is_hierarchically_included(final_host):
-        final_host = host
+    host_entries.sort(key=lambda h: h.get_entry()["level"], reverse=True)
+    final_host = Hosts([host_entries[0]])
+      
+    host_to_remove = []
+    host_to_add = []
+    new_host = []
+    for h_new in host_entries[1:]:
+      for h_exis in final_host.get_entry():
+        # if host_info.is_hierarchically_included(e.host) or (list(host_info.get_entry().keys())[0] == "human" and list(host_info.get_entry().keys())[0] != list(e.host.get_entry().keys())[0]):
+        if h_new.hierarchically_includes(h_exis):
+          host_to_remove.append(h_exis)
+          host_to_add.append(h_new)
+        else:
+          new_host.append(h_new)
+    for h_exis in host_to_remove:
+      final_host.remove_host_info(h_exis)
+    for h_new in host_to_add:
+      final_host.add_host_info_if_success(h_new)
+    for h_new in new_host:
+      final_host.add_host_info_if_success(h_new)
+          
     return(final_host)
   
   
