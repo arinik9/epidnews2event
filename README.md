@@ -23,7 +23,7 @@ For reproducibility purpose, we provide some samples from the data collected by 
 
 
 ## Workflow
-![workflow](./workflow.png){width=900}
+![workflow](./workflow.png)
 
 
 
@@ -56,7 +56,7 @@ For reproducibility purpose, we provide some samples from the data collected by 
 
 ## Installation
 
-* Install [Maven](https://maven.apache.org/) (tested with Python 3.8.5).
+* Install [Maven](https://maven.apache.org/) (tested with the version 3.8.5).
 
 * Install Python (tested with Python 3.8.12)
 
