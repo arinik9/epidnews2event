@@ -227,12 +227,6 @@ if __name__ == '__main__':
                                            consts.CORPUS_EVENTS_APHIS_FOLDER)
   
   print("ending with Aphis ....")
-  
-  
-  elapsed_time = time.time()-st
-  print('Execution time:', elapsed_time/60, 'minutes')
-
-
 
 
 
@@ -276,3 +270,8 @@ if __name__ == '__main__':
                                              consts.CORPUS_EVENTS_EMPRESI_FOLDER)
   
   print("ending with Empres-i ....")
+
+  
+  
+  elapsed_time = time.time()-st
+  print('Execution time:', elapsed_time/60, 'minutes')
