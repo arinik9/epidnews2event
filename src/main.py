@@ -20,6 +20,12 @@ import time
 import src.consts as consts
 import src.user_consts as user_consts
 
+
+# to disable the following warning: "huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks..."
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+
+
 if __name__ == '__main__':
   st = time.time()
   
