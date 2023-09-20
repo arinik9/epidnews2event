@@ -63,7 +63,7 @@ For reproducibility purpose, we provide some samples from the data collected by 
 * Install Python dependencies using the following command:
 
   ```
-  pip install -r requirements.txt
+  pip install --no-cache-dir -r requirements.txt
 
   ```
 
