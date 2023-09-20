@@ -11,11 +11,11 @@ import numpy as np
 import csv
 from abc import ABC, abstractmethod
 
-import src.util.util as util
+import src.myutil.util as util
 import src.consts as consts
 from src.event_retrieval.event_retrieval_strategy import EventRetrievalStrategy
 
-from src.util.util_event import get_df_from_events
+from src.myutil.util_event import get_df_from_events
 
 import re
 

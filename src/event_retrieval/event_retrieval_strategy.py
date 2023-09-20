@@ -21,7 +21,7 @@ from src.event.symptom import Symptom
 from src.event.host import Host
 from src.event.hosts import Hosts
 from src.event.disease import Disease
-from src.util.util_gis import retrieve_continent_from_country_code
+from src.myutil.util_gis import retrieve_continent_from_country_code
 from src.event.timex import convert_timex_str_to_datetime
 
 from sutime import SUTime # temporal entity normalization

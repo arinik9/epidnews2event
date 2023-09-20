@@ -26,9 +26,9 @@ from iso3166 import countries
 import src.consts as consts
 from src.geocoding.relative_spatial_entity import is_relative_spatial_entity, idenitfy_relative_spatial_cardinal
 from src.geocoding.geocode import geocode_batch_with_nominatim, geocode_batch_with_arcgis, geocode_batch_with_geonames, geocode_with_geonames
-from src.util.util_gis import retrieve_continent_from_country_code, get_country_apolitical_name_from_alpha3_code
+from src.myutil.util_gis import retrieve_continent_from_country_code, get_country_apolitical_name_from_alpha3_code
 from src.geocoding.prepare_spatial_entity_lookup_table import build_spatial_entity_lookup_table
-from src.util.util_gis import process_spatial_entity_abbreviation, resolve_manually_loc_name_ambiguity
+from src.myutil.util_gis import process_spatial_entity_abbreviation, resolve_manually_loc_name_ambiguity
 from src.event_normalization.spatial_entity_normalization import update_geocoding_results_in_DB
 
 

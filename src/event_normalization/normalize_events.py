@@ -20,7 +20,7 @@ import csv
 import re
 
 
-from src.util.util_gis import resolve_manually_loc_name_ambiguity
+from src.myutil.util_gis import resolve_manually_loc_name_ambiguity
 
 from src.event_normalization.disease_entity_normalization import retrieve_disease_data_from_text
                                 
@@ -34,7 +34,7 @@ from src.event_normalization.disease_entity_normalization import retrieve_normal
                                 
 from src.event_normalization.spatial_entity_normalization import search_geonames_for_admin1_loc_list, retrieve_normalized_loc_list
 
-from src.util.util_gis import get_country_apolitical_name_from_alpha3_code, process_spatial_entity_abbreviation
+from src.myutil.util_gis import get_country_apolitical_name_from_alpha3_code, process_spatial_entity_abbreviation
 
 from src.geocoding.relative_spatial_entity import idenitfy_relative_spatial_cardinal
 from src.geocoding.geocode import geocode_with_geonames, geocode_raw_with_geonames

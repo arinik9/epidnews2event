@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import src.event.event as event
 
-from src.util.util_event import read_events_from_df
+from src.myutil.util_event import read_events_from_df
 
 import src.consts as consts
 

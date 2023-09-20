@@ -14,7 +14,7 @@ import src.consts as consts
 import csv
 import src.event.location as location
 
-from src.util.util_gis import retrieve_continent_from_country_code
+from src.myutil.util_gis import retrieve_continent_from_country_code
 
 from src.geocoding.geocode import geocode_raw_with_geonames
 from src.geocoding.enhance_geonames_data_with_hierarchy import get_loc_hierarchy
