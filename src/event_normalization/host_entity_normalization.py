@@ -5,6 +5,7 @@ Created on Nov 16, 2021
 '''
 
 import src.consts as consts
+import src.user_consts as user_consts
 import json
 import os
 
@@ -59,6 +60,13 @@ def retrieve_normalized_host_list(host_info_list, NCBI_host_results_filepath):
 
 
 def retrieve_NCBI_id_from_keyword(txt):
+  txt_orig = txt 
+  # ----------------------------------------------------------------------------------------------
+  # workaround for human-related texts, since NCBI does not contain any
+  human_db = [entry["text"] for entry in consts.HOST_KEYWORDS_HIERARCHY_DICT[user_consts.HOST_HUMAN]]
+  if txt in human_db:
+    txt = user_consts.HOST_HUMAN
+  # ----------------------------------------------------------------------------------------------
   txt_pl = pluralize(txt)
   txt_sl = singularize(txt)
   taxId = None
@@ -70,7 +78,7 @@ def retrieve_NCBI_id_from_keyword(txt):
     taxId = consts.hostName2NCBIid[txt_sl]
     
   if taxId is None:
-    print("error for", txt)
+    print("error for", txt_orig, "in retrieve_NCBI_id_from_keyword()")
   return taxId
 
 
@@ -90,10 +98,10 @@ def retrieve_NCBI_hierarchy_and_host_type_from_id(id):
   txt = stdout.split("cellular organisms;")[1].lower()
   
   host_type = ""
-  if "mammalia" in txt:
-    host_type = "mammal"
-  elif "homo sapiens" in txt:
+  if "homo sapiens" in txt:
     host_type = "human"
+  elif "mammalia" in txt:
+    host_type = "mammal"
   elif "aves" in txt:
     host_type = "avian"
     
